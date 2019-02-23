@@ -2,7 +2,9 @@ package mapreduce
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
+	"sort"
 )
 
 func doReduce(
@@ -12,48 +14,48 @@ func doReduce(
 	nMap int, // the number of map tasks that were run ("M" in the paper)
 	reduceF func(key string, values []string) string,
 ) {
+	kvs := map[string][]string{}
 
-	outfile, _ := os.Create(outFile)
-	defer outfile.Close()
-	enc := json.NewEncoder(outfile)
 	for i := 0; i < nMap; i++ {
-
-		fileName := reduceName(jobName, i, reduceTask)
-		f, _ := os.Open(fileName)
+		fmt.Println(reduceName(jobName, i, reduceTask))
+		filename := reduceName(jobName, i, reduceTask)
+		f, _ := os.Open(filename)
 		defer f.Close()
 		dec := json.NewDecoder(f)
-		var kv KeyValue
+		kv := &KeyValue{}
 		for {
-			err := dec.Decode(&kv)
-			if err != nil {
+
+			e := dec.Decode(kv)
+			if e != nil {
 				break
 			}
-			// s := reduceF(kv.Key, nil)
-			enc.Encode(KeyValue{kv.Key, reduceF(kv.Key, nil)})
+
+			_, ok := kvs[kv.Key]
+			if !ok {
+				kvs[kv.Key] = []string{}
+			}
+			kvs[kv.Key] = append(kvs[kv.Key], kv.Value)
+
+			// enc.Encode(KeyValue{kv.Key, reduceF(kv.Key, []string{kv.Value})})
 		}
-		// outF, _ := os.Create(outFile)
-		// defer outF.Close()
-		// enc := json.NewEncoder(outF)
-
-		// for i := 0; i < nMap; i++ {
-		// 	fmt.Println(reduceName(jobName, i, reduceTask))
-		// 	filename := reduceName(jobName, i, reduceTask)
-		// 	f, _ := os.Open(filename)
-		// 	defer f.Close()
-		// 	dec := json.NewDecoder(f)
-		// 	kv := &KeyValue{}
-		// 	for {
-
-		// 		e := dec.Decode(kv)
-		// 		if e != nil {
-		// 			break
-		// 		}
-		// 		enc.Encode(KeyValue{kv.Key, reduceF(kv.Key, nil)})
-		// 	}
-		// 	// fmt.Printf("%+v", kv)
-
 	}
 
+	// 取出所有key
+	keys := make([]string, 0, len(kvs))
+	for k := range kvs {
+		keys = append(keys, k)
+	}
+
+	// 对key 排序
+	sort.Strings(keys)
+
+	// 然后写进文件
+	outF, _ := os.Create(outFile)
+	defer outF.Close()
+	enc := json.NewEncoder(outF)
+	for _, k := range keys {
+		enc.Encode(KeyValue{k, reduceF(k, kvs[k])})
+	}
 	//
 	// doReduce manages one reduce task: it should read the intermediate
 	// files for the task, sort the intermediate key/value pairs by key,

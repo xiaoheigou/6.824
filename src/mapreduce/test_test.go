@@ -144,7 +144,7 @@ func cleanup(mr *Master) {
 }
 
 func TestSequentialSingle(t *testing.T) {
-	mr := Sequential("test", makeInputs(1), 1, MapFunc, ReduceFunc)
+	mr := Sequential("test", makeInputs(2), 2, MapFunc, ReduceFunc)
 	mr.Wait()
 	check(t, mr.files)
 	checkWorker(t, mr.stats)

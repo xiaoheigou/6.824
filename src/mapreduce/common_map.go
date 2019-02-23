@@ -1,7 +1,11 @@
 package mapreduce
 
 import (
+	"encoding/json"
+	"fmt"
 	"hash/fnv"
+	"io/ioutil"
+	"os"
 )
 
 func doMap(
@@ -11,7 +15,40 @@ func doMap(
 	nReduce int, // the number of reduce task that will be run ("R" in the paper)
 	mapF func(filename string, contents string) []KeyValue,
 ) {
-	//
+
+	// fmt.Println("jobname:", jobName, "maptask:", mapTask, "inflie:", inFile, "except2:", nReduce)
+	//  jobname: test maptask: 0 inflie: 824-mrinput-0.txt except2: 2
+
+	f, _ := os.OpenFile(inFile, os.O_RDONLY, 6)
+	defer f.Close()
+	bs, _ := ioutil.ReadAll(f)
+	kvs := mapF(inFile, string(bs))
+	interfiles := []*os.File{}
+
+	for i := 0; i < nReduce; i++ {
+		filename := reduceName(jobName, mapTask, i)
+		// fmt.Println(filename)
+		interfile, _ := os.Create(filename)
+		defer interfile.Close()
+		interfiles = append(interfiles, interfile)
+		// fmt.Println(interfile)
+
+	}
+
+	for _, kv := range kvs {
+
+		i := ihash(kv.Key) % nReduce
+		file := interfiles[i]
+		enc := json.NewEncoder(file)
+		err := enc.Encode(&kv)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+
+	// mapF(inFile)
+
+	//  *****
 	// doMap manages one map task: it should read one of the input files
 	// (inFile), call the user-defined map function (mapF) for that file's
 	// contents, and partition mapF's output into nReduce intermediate files.

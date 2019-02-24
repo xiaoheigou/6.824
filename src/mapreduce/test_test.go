@@ -132,6 +132,8 @@ func port(suffix string) string {
 func setup() *Master {
 	files := makeInputs(nMap)
 	master := port("master")
+	// fmt.Println(files, master)
+	// [824-mrinput-0.txt 824-mrinput-1.txt 824-mrinput-2.txt 824-mrinput-3.txt 824-mrinput-4.txt 824-mrinput-5.txt 824-mrinput-6.txt 824-mrinput-7.txt 824-mrinput-8.txt 824-mrinput-9.txt 824-mrinput-10.txt 824-mrinput-11.txt 824-mrinput-12.txt 824-mrinput-13.txt 824-mrinput-14.txt 824-mrinput-15.txt 824-mrinput-16.txt 824-mrinput-17.txt 824-mrinput-18.txt 824-mrinput-19.txt] /var/tmp/824-501/mr43473-master
 	mr := Distributed("test", files, nReduce, master)
 	return mr
 }

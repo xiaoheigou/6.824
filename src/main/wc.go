@@ -73,4 +73,6 @@ func main() {
 	} else {
 		mapreduce.RunWorker(os.Args[2], os.Args[3], mapF, reduceF, 100, nil)
 	}
+	// cmd := exec.Command("rm", "mrtmp.*")
+	// cmd.Run()
 }
